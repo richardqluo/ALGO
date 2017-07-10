@@ -712,7 +712,9 @@ public:
     ListNode* reSortAbsList(ListNode* head) {
         ListNode *prev = head;
         ListNode *curr = head->next;
+        //prev->value = pow(prev->value,2); //square head first
         while (curr != nullptr) {
+            //curr->value = pow(curr->value,2); //square each node
             if (curr->value < prev->value) {
                 prev->next = curr->next;// Detach curr from linked list
                 curr->next = head;// Move current node to beginning
