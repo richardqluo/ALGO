@@ -1,0 +1,30 @@
+EventQueue::~EventQueue(){
+    LockGuard<Mutex> lock(&d_mutex);
+    d_isActive = false;
+    while (!d_queue.empty()) {
+        d_queue.pop();
+    }
+};
+void EventQueue::consume() {
+    while(true) {
+        Item it;
+        {
+            LockGuard<Mutex> lock(&d_mutex);
+            while(d_queue.empty()) {
+                if(d_condition.wait(&d_mutex)) {
+                    d_isActive = false;
+                    return;
+                }
+            }
+            it = d_queue.front();
+            d_queue.pop();
+        }
+    }
+}
+void EventQueue::submit(const Item& it) {
+    LockGuard<Mutex> lock(&d_mutex);
+    d_queue.push(it);
+    if(d_queue.size() == 1) {//as long as 1 available
+        d_condition.signal();
+    }
+}
