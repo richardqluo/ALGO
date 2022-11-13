@@ -145,7 +145,7 @@ void stl(){
     unique_ptr<vector<int>> vp(new vector<int>);
     vector<int> vt(3);//0 0 0 destructor of vt will be called when out of scope
     vt.push_back(1); //0 0 0 1 append to back, 1 if  vector<int> vt;
-    vt.emplace_back(2);
+    vt.emplace_back(2);//vector<std::pair<int,string>> vs; vs.emplace_back(1,"s") = vs.push_back(std::make_pair(1,"s"));
     //always encapsulate a dynamic array stored in the heap
     vector<int> v{ 1, 2};
     for (unsigned i=0; i<vt.size(); i++)
