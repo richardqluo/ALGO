@@ -997,6 +997,34 @@ public:
         }
         return curMax+1;
     }
+        
+    int DistanceFromRoot(TreeNode* root, TreeNode* node){
+        int dist = 0;
+        //stack node with its distance to the source
+        std::stack<std::pair<std::shared_ptr<TreeNode>,int>> appStack;
+        appStack.push(std::make_pair(root,1));
+        //Depth First Search on each topic to the application
+        while(!appStack.empty()){
+            std::pair<std::shared_ptr<TreeNode>,int> nodeDist = appStack.top();
+            std::shared_ptr<TreeNode> tn = nodeDist.first;
+            dist = nodeDist.second;
+            appStack.pop();
+            /*
+            if(tn == node){
+                return dist;
+            }
+            */
+            for (auto ta : tn->subNodes){
+                if(ta == node){
+                    //return as soon as the appId found by publisher, earlier than above commented out
+                    return dist+1;
+                }
+                dist += 1;
+                appStack.push(std::make_pair(ta, dist));
+            }
+        }
+        return dist;
+    }
     int maxSum (TreeNode* root){
         if(root==nullptr)
             return 0;
