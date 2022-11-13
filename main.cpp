@@ -18,13 +18,14 @@
 #include <mutex>
 #include <future>
 #include <algorithm>
+#include <cmath>
 #include <time.h>
 #include <assert.h>
 #include "Data.h"
 #include "Datas.h"
 //<algorithm>std::sort std::reverse std::remove_if std::max(1,2);std::abs(-1);pow(3,2)==9;
 //#include <limits.h> INT_MIN UINT_MAX;numeric_limits<int>::min();
-//<memory>unique_ptr
+//<memory>unique_ptr shared_ptr
 //<mutex>unique_lock
 //<utility> std::pair
 using namespace std;//using std::vector;
@@ -81,7 +82,7 @@ void stl(){
     mv[0].push_back('b');
 
     set<int> ms;
-    ms.insert(1);
+    ms.insert(1);//unchanged if val exists, returns a pair<iterator,bool> r.first to val, r.second false
     if(ms.find(1)!=ms.end())//
         ms.erase(1);
     ms.erase(ms.find(1));
@@ -101,7 +102,9 @@ void stl(){
     map["GE"]=250;//if key exists replace value otherwise insert
     //r =  map.emplace("GE",300);//in-place construct item avoid extra move copy op
 
-    int val =map.at("MS");
+    int val =map.at("MS"); //Type& t = map.at("key"); get reference to object
+    //refernece can not be in container like vector|unordered_map<int,T&>
+    //use shared point instead  vector|unordered_map<int,std::shared_ptr<T>>
     unordered_map<string,int>::iterator mit;
     mit =map.find("GS");
     if(mit != map.end()){
@@ -117,6 +120,7 @@ void stl(){
         cout << item.second << " ";
     }
     cout << endl;
+    //for(auto it : map){ it.second
     for(auto it = map.begin(); it != map.end(); ) {//not ++it here
         if (it->second < 100)
             it = map.erase(it);//return it pointing to the next
@@ -489,7 +493,7 @@ void ptr(){
     v.emplace_back(new Data);
 
 
-    auto sp = make_shared<Data>();//shared_ptr<Data> sp( new Data() ); //value init 0
+    auto sp = make_shared<Data>(int(i));//rvalue in ctr or shared_ptr<Data> sp( new Data(i) ); //value init 0
     {
         shared_ptr<Data> sq = sp;
         cout <<sq.use_count()<<endl;//2
@@ -500,6 +504,7 @@ void ptr(){
     }
     cout <<sp.use_count()<<endl;//1
     cout << sp->getData() <<endl;
+    //func(const std::shared_ptr<T>&) //pass value std::shared_ptr<T> will increment use_count then decrement when out func for no reason
 */
 }
 
@@ -1082,3 +1087,9 @@ int main() {
 */
     return 0;
 }
+
+/*
+ notes:
+ settings > build exec & deploy > toolchain > MinGW home = v4 to C:\Program Files (x86)\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32
+ ctrl-shift-v then delete hist on clipboard, then copy from other source and paste
+ */
