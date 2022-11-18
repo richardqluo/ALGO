@@ -7,15 +7,19 @@ private:
 public:
     Vq(int sz):size(sz){};
     const int size;
-    
+
     void push(int p){
-      if (vt.size()>=size){
-          vt.resize(size); //add/remove item to fit the same size
-          //vt.reserve(size) //reallocate if size > orig capacity to make new capacity >= size to avoid multiple reallocations during grrowth 
-          ct = 0;
+      if (vt.size() == size){
+          if(ct > size){
+              ct = 0;
+          }
           vt[ct] = p;
       }else{
           vt.push_back(p);
+          if (vt.size() == size){ //only once when it reach the given size
+              vt.resize(size);//add/remove item to fit the same size
+              //vt.reserve(size) //reallocate if size > orig capacity to make new capacity >= size to avoid multiple reallocations during grrowth 
+          }
       }  
       ct++;  
     };
