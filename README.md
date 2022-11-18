@@ -11,7 +11,7 @@ public:
     void push(int p){
       if (vt.size()>=size){
           vt.resize(size); //add/remove item to fit the same size
-          //vt.reserve(size) //reallocate if size > orig capacity to make new capacity >= size
+          //vt.reserve(size) //reallocate if size > orig capacity to make new capacity >= size to avoid multiple reallocations during grrowth 
           ct = 0;
           vt[ct] = p;
       }else{
