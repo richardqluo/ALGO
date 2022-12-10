@@ -36,3 +36,47 @@ int main() {
     vq.push(2);
     std::cout << vq.peek(0) << "\n";
 }
+
+#include <map>
+#include <functional>
+struct moreComp {
+  bool operator() (const int& lhs, const int& rhs) const
+  {return lhs>rhs;} //default < std::less<int>
+};
+class StkEx{
+private:
+    std::multimap<int,int,std::greater<int>> asks;
+    //multimap<int,int,moreComp> //multi key
+    
+public:
+    vector<int> match(int S){
+        vector<int> r;
+        auto range = asks.equal_range(S); //asks key[1,1,3,5] S(1|2|3)
+        std::cout << range.first->first << '\n'; //asks.lower_bound <= 1|1|3 inner
+        std::cout << range.second->first << '\n'; //asks.upper_bound < eof=size|1|1 outer
+        for (auto it = range.first; it != range.second; ++it){
+            //S(1|2) [1,1]|[]
+            std::cout << it->first << " : " << it->second << '\n';
+            r.push_back(it->second);
+        }
+        
+        auto itlow = asks.lower_bound(S);
+        if (itlow != asks.end()) //moreComp 
+            std::cout << itlow->first << '\n';
+        else
+            std::cout << "no" << '\n';
+        
+        auto itup = asks.upper_bound(S);
+        if (itup != asks.end()) //asks.begin() for default lessComp 
+            std::cout << itup->first << '\n';
+        else
+            std::cout << "no" << '\n';
+        
+        for (auto it=itlow; it!=itup; ++it){
+            //S(1|2) [1,1]|[]
+            std::cout << it->first << " : " << it->second << '\n';
+            r.push_back(it->second);
+        }
+        return r;
+    }
+};
