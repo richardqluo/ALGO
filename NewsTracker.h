@@ -48,3 +48,16 @@ private:
 };
 
 
+#include <memory>
+#include "Messages.h"
+
+struct Application {
+public:
+    Application(int id) : appId(id){};
+    int appId;
+    std::vector<TopicSource> subSources;
+    std::vector<std::pair<int, std::shared_ptr<Application>>> pubApplications;
+    //only for upward traverse
+    //std::vector<std::pair<int, std::shared_ptr<Application>>> subApplications;
+};
+
