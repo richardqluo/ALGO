@@ -232,9 +232,6 @@ std::vector<int> NewsTracker::FindUnusedPublishers(int topicId){
 }
 
 int NewsTracker::maxDepths(const std::shared_ptr<Application>& application, int topicId){
-    if(application->pubApplications.size() == 0){
-        return 1;
-    }
     int curMax=0;
     bool found = false;
     for(auto ta : application->pubApplications){
@@ -249,6 +246,6 @@ int NewsTracker::maxDepths(const std::shared_ptr<Application>& application, int 
     if (found) {
         return curMax + 1;
     }else{
-        return 0;
+        return 1;
     }
 }
