@@ -14,28 +14,27 @@ using namespace std;
 
 
 struct Order{
-public:
     unsigned long long id;
     unsigned long time;
     string symbol;
     char type;
     char side;
-    unsigned long long shares;
     double price;
-    Order(unsigned long long i, unsigned long tm, string sb, char tp, char sd, unsigned long long sh, double p) : id(i),time(tm),symbol(sb),type(tp),side(sd),shares(sh),price(p){};
+    unsigned long long shares;
+    Order(unsigned long long i, unsigned long tm, string sb, char tp, char sd, double p, unsigned long long sh) : id(i),time(tm),symbol(sb),type(tp),side(sd),price(p),shares(sh){}
 };
 
 class Matcher{
 private:
-    unordered_map<string,map<double,queue<shared_ptr<Order>>,greater<double>>> asks;
-    unordered_map<string,map<double,queue<shared_ptr<Order>>>> bids;
+    unordered_map<string,map<double,queue<shared_ptr<Order>>>> asks;
+    unordered_map<string,map<double,queue<shared_ptr<Order>>,greater<double>>> bids;
     unordered_map<unsigned long long,shared_ptr<Order>> orders;
 
 
 public:
     void load(vector<Order>& O){
         for(Order o : O){
-            auto spo = make_shared<Order>(o.id,o.time,o.symbol,o.type,o.side,o.price);
+            auto spo = make_shared<Order>(o.id,o.time,o.symbol,o.type,o.side,o.price,o.shares);
             orders[o.id] = spo;
 
             if(o.side == 'B'){
@@ -52,7 +51,7 @@ public:
                 }else{
                     queue<shared_ptr<Order>> oq;
                     oq.push(spo);
-                    map<double,queue<shared_ptr<Order>>> bm;
+                    map<double,queue<shared_ptr<Order>>,greater<double>> bm;
                     bm.insert(make_pair(o.price, oq));
                     bids.insert(make_pair(o.symbol, bm));
                 }
@@ -70,7 +69,7 @@ public:
                 }else{
                     queue<shared_ptr<Order>> oq;
                     oq.push(spo);
-                    map<double,queue<shared_ptr<Order>>,greater<double>> am;
+                    map<double,queue<shared_ptr<Order>>> am;
                     am.insert(make_pair(o.price, oq));
                     asks.insert(make_pair(o.symbol, am));
                 }
@@ -80,12 +79,12 @@ public:
     vector<int> match(unsigned long T, string S){
         vector<int> r;
 
-        auto itb = bids.find(S);
-        if(itb == bids.end()){
-            return r;
-        }
         auto ita = asks.find(S);
         if(ita == asks.end()){
+            return r;
+        }
+        auto itb = bids.find(S);
+        if(itb == bids.end()){
             return r;
         }
 
@@ -95,15 +94,20 @@ public:
         while(bestBidPrice>=bestAskPrice){
             auto spa = ita->second.begin()->second.front();
             auto spb = itb->second.begin()->second.front();
-
+            if(spa->time > T || spb->time > T){
+                break;
+            }
             int size = spb->shares - spa->shares;
             if(size == 0){
+                cout << spb->id << " : " << spa->id << " = " << size << '\n';
                 itb->second.begin()->second.pop();
                 ita->second.begin()->second.pop();
             }else if(size > 0){
+                cout << spa->id << " = " << size << '\n';
                 spb->shares = size;
                 ita->second.begin()->second.pop();
             }else if(size < 0){
+                cout << spb->id << " = " << size << '\n';
                 spa->shares = -size;
                 itb->second.begin()->second.pop();
             }
@@ -119,7 +123,13 @@ public:
                     bids.erase(itb);
                 }
             }
-            if(asks.empty() || bids.empty()){
+
+            ita = asks.find(S);
+            if(ita == asks.end()){
+                break;
+            }
+            itb = bids.find(S);
+            if(itb == bids.end()){
                 break;
             }
             bestBidPrice = itb->second.begin()->first;
@@ -133,6 +143,24 @@ public:
 
 
 int main() {
-    /* Enter your code here. Read input from STDIN. Print output to STDOUT */   
+    cout << "begin" << endl;
+
+    Order o1(1,0000001,"ALN",'L','B',60.90,100);
+    Order o2(11,0000002,"XYZ",'L','B',60.90,200);
+    Order o3(110,0000003,"XYZ",'L','S',59.90,100);
+    Order o4(112,0000004,"XYZ",'L','S',60.90,120);
+    Order o5(10,0000006,"ALN",'L','S',60.90,100);
+    vector<Order> vo;
+    vo.push_back(o1);
+    vo.push_back(o2);
+    vo.push_back(o3);
+    vo.push_back(o4);
+    vo.push_back(o5);
+
+    Matcher mc;
+    mc.load(vo);
+    mc.match(0000003, "XYZ");
+    cout << "end" << endl;
+    /* Enter your code here. Read input from STDIN. Print output to STDOUT */
     return 0;
 }
