@@ -76,16 +76,29 @@ public:
             }
         }
     };
-    vector<int> match(unsigned long T, string S){
-        vector<int> r;
+
+    void match(unsigned long T){
+        //cross orders by the smaller map
+        if(asks.size() < bids.size()){
+            for(auto ita = asks.begin(); ita != asks.end(); ++ita){
+                match(T, ita->first);
+            }
+        }else{
+            for(auto itb = bids.begin(); itb != bids.end(); ++itb){
+                match(T, itb->first);
+            }
+        }
+    }
+
+    void match(unsigned long T, string S){
 
         auto ita = asks.find(S);
         if(ita == asks.end()){
-            return r;
+            return;
         }
         auto itb = bids.find(S);
         if(itb == bids.end()){
-            return r;
+            return;
         }
 
         double bestBidPrice = itb->second.begin()->first;
@@ -99,7 +112,7 @@ public:
             }
             int size = spb->shares - spa->shares;
             if(size == 0){
-                cout << spb->id << " : " << spa->id << " = " << size << '\n';
+                cout << spb->id << " : " << spa->id << " = " << spb->shares << '\n';
                 itb->second.begin()->second.pop();
                 ita->second.begin()->second.pop();
             }else if(size > 0){
@@ -115,29 +128,22 @@ public:
                 ita->second.erase(bestAskPrice);
                 if(ita->second.empty()){
                     asks.erase(ita);
+                    break;
                 }
             }
             if(itb->second.begin()->second.empty()){
                 itb->second.erase(bestBidPrice);
                 if(itb->second.empty()){
                     bids.erase(itb);
+                    break;
                 }
             }
 
-            ita = asks.find(S);
-            if(ita == asks.end()){
-                break;
-            }
-            itb = bids.find(S);
-            if(itb == bids.end()){
-                break;
-            }
             bestBidPrice = itb->second.begin()->first;
             bestAskPrice = ita->second.begin()->first;
         }
 
-        //cout << it->first << " : " << it->second << '\n';
-        return r;
+        return;
     }
 };
 
@@ -159,7 +165,8 @@ int main() {
 
     Matcher mc;
     mc.load(vo);
-    mc.match(0000003, "XYZ");
+    mc.match(0000006);
+    mc.match(0000006, "XYZ");
     cout << "end" << endl;
     /* Enter your code here. Read input from STDIN. Print output to STDOUT */
     return 0;
