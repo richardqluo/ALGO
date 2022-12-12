@@ -28,119 +28,163 @@ class Matcher{
 private:
     unordered_map<string,map<double,queue<shared_ptr<Order>>>> asks;
     unordered_map<string,map<double,queue<shared_ptr<Order>>,greater<double>>> bids;
-    unordered_map<unsigned long long,shared_ptr<Order>> orders;
+    unordered_map<unsigned long long,vector<shared_ptr<Order>>> orders;
 
 
 public:
-    void load(vector<Order>& O){
-        for(Order o : O){
-            auto spo = make_shared<Order>(o.id,o.time,o.symbol,o.type,o.side,o.price,o.shares);
-            orders[o.id] = spo;
+    void New(Order&od){
+        auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
+        orders[od.id].push_back(po);
 
-            if(o.side == 'B'){
-                auto itb = bids.find(o.symbol);
-                if(itb != bids.end()){
-                    auto it = itb->second.find(o.price);
-                    if(it != itb->second.end()){
-                        it->second.push(spo);
-                    }else{
-                        queue<shared_ptr<Order>> oq;
-                        oq.push(spo);
-                        itb->second.insert(make_pair(o.price, oq));
-                    }
+        if(od.side == 'B'){
+            auto ib = bids.find(od.symbol);
+            if(ib != bids.end()){
+                auto it = ib->second.find(od.price);
+                if(it != ib->second.end()){
+                    it->second.push(po);
                 }else{
                     queue<shared_ptr<Order>> oq;
-                    oq.push(spo);
-                    map<double,queue<shared_ptr<Order>>,greater<double>> bm;
-                    bm.insert(make_pair(o.price, oq));
-                    bids.insert(make_pair(o.symbol, bm));
+                    oq.push(po);
+                    ib->second.insert(make_pair(od.price, oq));
                 }
-            }else if(o.side == 'S'){
-                auto ita = asks.find(o.symbol);
-                if(ita != asks.end()){
-                    auto it = ita->second.find(o.price);
-                    if(it != ita->second.end()){
-                        it->second.push(spo);
-                    }else{
-                        queue<shared_ptr<Order>> oq;
-                        oq.push(spo);
-                        ita->second.insert(make_pair(o.price, oq));
-                    }
+            }else{
+                queue<shared_ptr<Order>> oq;
+                oq.push(po);
+                map<double,queue<shared_ptr<Order>>,greater<double>> bm;
+                bm.insert(make_pair(od.price, oq));
+                bids.insert(make_pair(od.symbol, bm));
+            }
+        }else if(od.side == 'S'){
+            auto ia = asks.find(od.symbol);
+            if(ia != asks.end()){
+                auto it = ia->second.find(od.price);
+                if(it != ia->second.end()){
+                    it->second.push(po);
                 }else{
                     queue<shared_ptr<Order>> oq;
-                    oq.push(spo);
-                    map<double,queue<shared_ptr<Order>>> am;
-                    am.insert(make_pair(o.price, oq));
-                    asks.insert(make_pair(o.symbol, am));
+                    oq.push(po);
+                    ia->second.insert(make_pair(od.price, oq));
                 }
+            }else{
+                queue<shared_ptr<Order>> oq;
+                oq.push(po);
+                map<double,queue<shared_ptr<Order>>> am;
+                am.insert(make_pair(od.price, oq));
+                asks.insert(make_pair(od.symbol, am));
             }
         }
     };
 
-    void match(unsigned long T){
+    void Amend(Order& od){
+        auto io = orders.find(od.id);
+        if(io != orders.end()){
+            //invalidate the old order and reNew
+            io->second.back()->shares = 0;
+            auto spo = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
+            io->second.push_back(spo);
+            New(od);
+        }
+    }
+
+    void Cancel(Order& od){
+        auto io = orders.find(od.id);
+        if(io != orders.end()){
+            //invalidate the old order and reNew
+            io->second.back()->shares = 0;
+        }
+    }
+
+    void Match(unsigned long tm){
         //cross orders by the smaller map
         if(asks.size() < bids.size()){
-            for(auto ita = asks.begin(); ita != asks.end(); ++ita){
-                match(T, ita->first);
+            for(auto ia = asks.begin(); ia != asks.end(); ++ia){
+                Match(tm, ia->first);
             }
         }else{
-            for(auto itb = bids.begin(); itb != bids.end(); ++itb){
-                match(T, itb->first);
+            for(auto ib = bids.begin(); ib != bids.end(); ++ib){
+                Match(tm, ib->first);
             }
         }
     }
 
-    void match(unsigned long T, string S){
+    void Match(unsigned long tm, string sb){
 
-        auto ita = asks.find(S);
-        if(ita == asks.end()){
+        auto ia = asks.find(sb);
+        if(ia == asks.end()){
             return;
         }
-        auto itb = bids.find(S);
-        if(itb == bids.end()){
+        auto ib = bids.find(sb);
+        if(ib == bids.end()){
             return;
         }
 
-        double bestBidPrice = itb->second.begin()->first;
-        double bestAskPrice = ita->second.begin()->first;
+        double highestBid = ib->second.begin()->first;
+        double lowestAsk = ia->second.begin()->first;
 
-        while(bestBidPrice>=bestAskPrice){
-            auto spa = ita->second.begin()->second.front();
-            auto spb = itb->second.begin()->second.front();
-            if(spa->time > T || spb->time > T){
+        while(highestBid >= lowestAsk){
+            auto pa = ia->second.begin()->second.front();
+            auto pb = ib->second.begin()->second.front();
+            //skip cancelled orders
+            while(pa->shares == 0){
+                ia->second.begin()->second.pop();
+                if(ia->second.begin()->second.empty()){
+                    ia->second.erase(lowestAsk);
+                    if(ia->second.empty()){
+                        asks.erase(ia);
+                        break;
+                    }
+                }
+                pa = ia->second.begin()->second.front();
+            }
+            while(pb->shares == 0){
+                ib->second.begin()->second.pop();
+                if(ib->second.begin()->second.empty()){
+                    ib->second.erase(highestBid);
+                    if(ib->second.empty()){
+                        bids.erase(ib);
+                        break;
+                    }
+                }
+                pb = ib->second.begin()->second.front();
+            }
+            if(pa->time > tm || pb->time > tm){
                 break;
             }
-            int size = spb->shares - spa->shares;
+            int size = pb->shares - pa->shares;
             if(size == 0){
-                cout << spb->id << " : " << spa->id << " = " << spb->shares << '\n';
-                itb->second.begin()->second.pop();
-                ita->second.begin()->second.pop();
+                cout << pb->id << " : " << pa->id << " = " << pb->shares << '\n';
+                ib->second.begin()->second.pop();
+                orders[pb->id].clear(); //the order is close
+                ia->second.begin()->second.pop();
+                orders[pa->id].clear();
             }else if(size > 0){
-                cout << spa->id << " = " << size << '\n';
-                spb->shares = size;
-                ita->second.begin()->second.pop();
+                cout << pa->id << " = " << size << '\n';
+                pb->shares = size;
+                ia->second.begin()->second.pop();
+                orders[pa->id].clear();
             }else if(size < 0){
-                cout << spb->id << " = " << size << '\n';
-                spa->shares = -size;
-                itb->second.begin()->second.pop();
+                cout << pb->id << " = " << size << '\n';
+                pa->shares = -size;
+                ib->second.begin()->second.pop();
+                orders[pb->id].clear();
             }
-            if(ita->second.begin()->second.empty()){
-                ita->second.erase(bestAskPrice);
-                if(ita->second.empty()){
-                    asks.erase(ita);
+            if(ia->second.begin()->second.empty()){
+                ia->second.erase(lowestAsk);
+                if(ia->second.empty()){
+                    asks.erase(ia);
                     break;
                 }
             }
-            if(itb->second.begin()->second.empty()){
-                itb->second.erase(bestBidPrice);
-                if(itb->second.empty()){
-                    bids.erase(itb);
+            if(ib->second.begin()->second.empty()){
+                ib->second.erase(highestBid);
+                if(ib->second.empty()){
+                    bids.erase(ib);
                     break;
                 }
             }
 
-            bestBidPrice = itb->second.begin()->first;
-            bestAskPrice = ita->second.begin()->first;
+            highestBid = ib->second.begin()->first;
+            lowestAsk = ia->second.begin()->first;
         }
 
         return;
@@ -156,17 +200,22 @@ int main() {
     Order o3(110,0000003,"XYZ",'L','S',59.90,100);
     Order o4(112,0000004,"XYZ",'L','S',60.90,120);
     Order o5(10,0000006,"ALN",'L','S',60.90,100);
+    /*
     vector<Order> vo;
     vo.push_back(o1);
     vo.push_back(o2);
     vo.push_back(o3);
     vo.push_back(o4);
     vo.push_back(o5);
-
+    */
     Matcher mc;
-    mc.load(vo);
-    mc.match(0000006);
-    mc.match(0000006, "XYZ");
+    mc.New(o1);
+    mc.New(o2);
+    mc.New(o3);
+    mc.New(o4);
+    mc.New(o5);
+    mc.Match(0000006);
+    mc.Match(0000006, "XYZ");
     cout << "end" << endl;
     /* Enter your code here. Read input from STDIN. Print output to STDOUT */
     return 0;
