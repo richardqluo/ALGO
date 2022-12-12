@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <float.h>
 #include <unordered_map>
 #include <map>
 #include <queue>
@@ -11,7 +12,6 @@
 #include <memory>
 
 using namespace std;
-
 
 struct Order{
     unsigned long long id;
@@ -24,17 +24,28 @@ struct Order{
     Order(unsigned long long i, unsigned long tm, string sb, char tp, char sd, double p, unsigned long long sh) : id(i),time(tm),symbol(sb),type(tp),side(sd),price(p),shares(sh){}
 };
 
+struct lessComp {
+    bool operator() (const shared_ptr<Order> lhs, const shared_ptr<Order> rhs) const
+    {return lhs->time > rhs->time;}
+};
+
 class Matcher{
 private:
-    unordered_map<string,map<double,queue<shared_ptr<Order>>>> asks;
-    unordered_map<string,map<double,queue<shared_ptr<Order>>,greater<double>>> bids;
+    unordered_map<string,map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>>> asks;
+    unordered_map<string,map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>,greater<double>>> bids;
     unordered_map<unsigned long long,vector<shared_ptr<Order>>> orders;
 
 
 public:
-    void New(Order&od){
-        auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
-        orders[od.id].push_back(po);
+    void New(Order& od){
+        double pc = od.price;
+        if(od.type == 'M'){
+            pc = od.side == 'S' ? 0 : DBL_MAX;
+        }
+        vector<shared_ptr<Order>> vo;
+        auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, pc, od.shares);
+        vo.push_back(po);
+        orders[od.id] = vo;
 
         if(od.side == 'B'){
             auto ib = bids.find(od.symbol);
@@ -43,14 +54,14 @@ public:
                 if(it != ib->second.end()){
                     it->second.push(po);
                 }else{
-                    queue<shared_ptr<Order>> oq;
+                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
                     oq.push(po);
                     ib->second.insert(make_pair(od.price, oq));
                 }
             }else{
-                queue<shared_ptr<Order>> oq;
+                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
                 oq.push(po);
-                map<double,queue<shared_ptr<Order>>,greater<double>> bm;
+                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>,greater<double>> bm;
                 bm.insert(make_pair(od.price, oq));
                 bids.insert(make_pair(od.symbol, bm));
             }
@@ -61,14 +72,14 @@ public:
                 if(it != ia->second.end()){
                     it->second.push(po);
                 }else{
-                    queue<shared_ptr<Order>> oq;
+                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
                     oq.push(po);
                     ia->second.insert(make_pair(od.price, oq));
                 }
             }else{
-                queue<shared_ptr<Order>> oq;
+                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
                 oq.push(po);
-                map<double,queue<shared_ptr<Order>>> am;
+                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>> am;
                 am.insert(make_pair(od.price, oq));
                 asks.insert(make_pair(od.symbol, am));
             }
@@ -78,19 +89,32 @@ public:
     void Amend(Order& od){
         auto io = orders.find(od.id);
         if(io != orders.end()){
+            if(io->second.back()->symbol != od.symbol ||
+               io->second.back()->type != od.type ||
+               io->second.back()->side != od.side){
+                cout << "AmendReject" << '\n';
+                return;
+            }
             //invalidate the old order and reNew
             io->second.back()->shares = 0;
-            auto spo = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
-            io->second.push_back(spo);
+            auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
+            io->second.push_back(po);
             New(od);
+        }else{
+            cout << "AmendReject" << '\n';
         }
     }
 
-    void Cancel(Order& od){
-        auto io = orders.find(od.id);
+    void Cancel(unsigned long long id, unsigned long tm){
+        auto io = orders.find(id);
         if(io != orders.end()){
-            //invalidate the old order and reNew
-            io->second.back()->shares = 0;
+            if(io->second.back()->shares > 0){
+                io->second.back()->shares = 0;
+            }else{
+                cout << "CancelRected" << '\n';
+            };
+        }else{
+            cout << "CancelRected" << '\n';
         }
     }
 
@@ -108,7 +132,6 @@ public:
     }
 
     void Match(unsigned long tm, string sb){
-
         auto ia = asks.find(sb);
         if(ia == asks.end()){
             return;
@@ -122,8 +145,8 @@ public:
         double lowestAsk = ia->second.begin()->first;
 
         while(highestBid >= lowestAsk){
-            auto pa = ia->second.begin()->second.front();
-            auto pb = ib->second.begin()->second.front();
+            auto pa = ia->second.begin()->second.top();
+            auto pb = ib->second.begin()->second.top();
             //skip cancelled orders
             while(pa->shares == 0){
                 ia->second.begin()->second.pop();
@@ -131,10 +154,10 @@ public:
                     ia->second.erase(lowestAsk);
                     if(ia->second.empty()){
                         asks.erase(ia);
-                        break;
+                        return;
                     }
                 }
-                pa = ia->second.begin()->second.front();
+                pa = ia->second.begin()->second.top();
             }
             while(pb->shares == 0){
                 ib->second.begin()->second.pop();
@@ -142,10 +165,10 @@ public:
                     ib->second.erase(highestBid);
                     if(ib->second.empty()){
                         bids.erase(ib);
-                        break;
+                        return;
                     }
                 }
-                pb = ib->second.begin()->second.front();
+                pb = ib->second.begin()->second.top();
             }
             if(pa->time > tm || pb->time > tm){
                 break;
@@ -158,12 +181,12 @@ public:
                 ia->second.begin()->second.pop();
                 orders[pa->id].clear();
             }else if(size > 0){
-                cout << pa->id << " = " << size << '\n';
+                cout << pa->id << " = " << pa->shares << '\n';
                 pb->shares = size;
                 ia->second.begin()->second.pop();
                 orders[pa->id].clear();
             }else if(size < 0){
-                cout << pb->id << " = " << size << '\n';
+                cout << pb->id << " = " << pb->shares << '\n';
                 pa->shares = -size;
                 ib->second.begin()->second.pop();
                 orders[pb->id].clear();
@@ -197,9 +220,14 @@ int main() {
 
     Order o1(1,0000001,"ALN",'L','B',60.90,100);
     Order o2(11,0000002,"XYZ",'L','B',60.90,200);
-    Order o3(110,0000003,"XYZ",'L','S',59.90,100);
+    Order o3(110,0000003,"XYZ",'L','S',60.90,100);
     Order o4(112,0000004,"XYZ",'L','S',60.90,120);
     Order o5(10,0000006,"ALN",'L','S',60.90,100);
+    Order o6(12,0000007,"XYZ",'L','S',60.90,100);
+
+    Order a2(11,0000001,"XYZ",'L','S',60.90,150);
+    Order a3(110,0000001,"XYZ",'L','S',59.53,150);
+
     /*
     vector<Order> vo;
     vo.push_back(o1);
@@ -214,7 +242,14 @@ int main() {
     mc.New(o3);
     mc.New(o4);
     mc.New(o5);
-    mc.Match(0000006);
+    mc.New(o6);
+
+    mc.Amend(a2);
+    mc.Amend(a3);
+
+    mc.Cancel(112, 0000004);
+
+    mc.Match(0000007);
     mc.Match(0000006, "XYZ");
     cout << "end" << endl;
     /* Enter your code here. Read input from STDIN. Print output to STDOUT */
