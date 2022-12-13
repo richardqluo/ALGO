@@ -36,6 +36,46 @@ private:
 
 
 public:
+    void Add(shared_ptr<Order>& po){
+        if(po->side == 'B'){
+            auto ib = bids.find(po->symbol);
+            if(ib != bids.end()){
+                auto it = ib->second.find(po->price);
+                if(it != ib->second.end()){
+                    it->second.push(po);
+                }else{
+                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
+                    oq.push(po);
+                    ib->second.insert(make_pair(po->price, oq));
+                }
+            }else{
+                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
+                oq.push(po);
+                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>,greater<double>> bm;
+                bm.insert(make_pair(po->price, oq));
+                bids.insert(make_pair(po->symbol, bm));
+            }
+        }else if(po->side == 'S'){
+            auto ia = asks.find(po->symbol);
+            if(ia != asks.end()){
+                auto it = ia->second.find(po->price);
+                if(it != ia->second.end()){
+                    it->second.push(po);
+                }else{
+                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
+                    oq.push(po);
+                    ia->second.insert(make_pair(po->price, oq));
+                }
+            }else{
+                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
+                oq.push(po);
+                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>> am;
+                am.insert(make_pair(po->price, oq));
+                asks.insert(make_pair(po->symbol, am));
+            }
+        }
+    };
+    
     void New(Order& od){
         double pc = od.price;
         if(od.type == 'M'){
@@ -45,45 +85,8 @@ public:
         auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, pc, od.shares);
         vo.push_back(po);
         orders[od.id] = vo;
-
-        if(od.side == 'B'){
-            auto ib = bids.find(od.symbol);
-            if(ib != bids.end()){
-                auto it = ib->second.find(od.price);
-                if(it != ib->second.end()){
-                    it->second.push(po);
-                }else{
-                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
-                    oq.push(po);
-                    ib->second.insert(make_pair(od.price, oq));
-                }
-            }else{
-                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
-                oq.push(po);
-                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>,greater<double>> bm;
-                bm.insert(make_pair(od.price, oq));
-                bids.insert(make_pair(od.symbol, bm));
-            }
-        }else if(od.side == 'S'){
-            auto ia = asks.find(od.symbol);
-            if(ia != asks.end()){
-                auto it = ia->second.find(od.price);
-                if(it != ia->second.end()){
-                    it->second.push(po);
-                }else{
-                    priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
-                    oq.push(po);
-                    ia->second.insert(make_pair(od.price, oq));
-                }
-            }else{
-                priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp> oq;
-                oq.push(po);
-                map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>> am;
-                am.insert(make_pair(od.price, oq));
-                asks.insert(make_pair(od.symbol, am));
-            }
-        }
-    };
+        Add(po);
+    }
 
     void Amend(Order& od){
         auto io = orders.find(od.id);
@@ -98,7 +101,7 @@ public:
             io->second.back()->shares = 0;
             auto po = make_shared<Order>(od.id, od.time, od.symbol, od.type, od.side, od.price, od.shares);
             io->second.push_back(po);
-            New(od);
+            Add(po);
         }else{
             cout << "AmendReject" << '\n';
         }
