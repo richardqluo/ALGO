@@ -204,7 +204,7 @@ public:
                 }
             }
             if(ib->second.begin()->second.empty()){
-                ib->second.erase(highestBid);
+                ib->second.erase(highestBid);//ib->second.erase(ib->second.begin());
                 if(ib->second.empty()){
                     bids.erase(ib);
                     break;
