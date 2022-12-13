@@ -1,5 +1,4 @@
-#include <cmath>
-#include <cstdio>
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -25,7 +24,7 @@ struct Order{
 };
 
 struct lessComp {
-    bool operator() (const shared_ptr<Order> lhs, const shared_ptr<Order> rhs) const
+    bool operator() (const shared_ptr<Order>& lhs, const shared_ptr<Order>& rhs) const
     {return lhs->time > rhs->time;}
 };
 
@@ -110,6 +109,8 @@ public:
         if(io != orders.end()){
             if(io->second.back()->shares > 0){
                 io->second.back()->shares = 0;
+                io->second.clear();
+                orders.erase(io);
             }else{
                 cout << "CancelRected" << '\n';
             };
@@ -178,18 +179,22 @@ public:
                 cout << pb->id << " : " << pa->id << " = " << pb->shares << '\n';
                 ib->second.begin()->second.pop();
                 orders[pb->id].clear(); //the order is close
+                orders.erase(pb->id);
                 ia->second.begin()->second.pop();
                 orders[pa->id].clear();
+                orders.erase(pa->id);
             }else if(size > 0){
                 cout << pa->id << " = " << pa->shares << '\n';
                 pb->shares = size;
                 ia->second.begin()->second.pop();
                 orders[pa->id].clear();
+                orders.erase(pa->id);
             }else if(size < 0){
                 cout << pb->id << " = " << pb->shares << '\n';
                 pa->shares = -size;
                 ib->second.begin()->second.pop();
                 orders[pb->id].clear();
+                orders.erase(pb->id);
             }
             if(ia->second.begin()->second.empty()){
                 ia->second.erase(lowestAsk);
@@ -221,9 +226,9 @@ int main() {
     Order o1(1,0000001,"ALN",'L','B',60.90,100);
     Order o2(11,0000002,"XYZ",'L','B',60.90,200);
     Order o3(110,0000003,"XYZ",'L','S',60.90,100);
-    Order o4(112,0000004,"XYZ",'L','S',60.90,120);
+    Order o4(112,0000004,"XYZ",'L','B',59.90,120);
     Order o5(10,0000006,"ALN",'L','S',60.90,100);
-    Order o6(12,0000007,"XYZ",'L','S',60.90,100);
+    Order o6(12,0000007,"XYZ",'L','S',59.90,100);
 
     Order a2(11,0000001,"XYZ",'L','S',60.90,150);
     Order a3(110,0000001,"XYZ",'L','S',59.53,150);
@@ -252,6 +257,5 @@ int main() {
     mc.Match(0000007);
     mc.Match(0000006, "XYZ");
     cout << "end" << endl;
-    /* Enter your code here. Read input from STDIN. Print output to STDOUT */
     return 0;
 }
