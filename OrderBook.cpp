@@ -229,28 +229,14 @@ int main() {
     Order o1(1,0000001,"ALN",'L','B',60.90,100);
     Order o2(11,0000002,"XYZ",'L','B',60.90,200);
     Order o3(110,0000003,"XYZ",'L','S',60.90,100);
-    Order o4(112,0000004,"XYZ",'L','B',59.90,120);
-    Order o5(10,0000006,"ALN",'L','S',60.90,100);
-    Order o6(12,0000007,"XYZ",'L','S',59.90,100);
 
     Order a2(11,0000001,"XYZ",'L','S',60.90,150);
     Order a3(110,0000001,"XYZ",'L','S',59.53,150);
 
-    /*
-    vector<Order> vo;
-    vo.push_back(o1);
-    vo.push_back(o2);
-    vo.push_back(o3);
-    vo.push_back(o4);
-    vo.push_back(o5);
-    */
     Matcher mc;
     mc.New(o1);
     mc.New(o2);
     mc.New(o3);
-    mc.New(o4);
-    mc.New(o5);
-    mc.New(o6);
 
     mc.Amend(a2);
     mc.Amend(a3);
@@ -259,6 +245,44 @@ int main() {
 
     mc.Match(0000007);
     mc.Match(0000006, "XYZ");
+    
+    string line;
+    vector<string> vs;
+    vs.reserve(5);
+    Matcher mc;
+    while (getline(cin, line)){
+        size_t start = 0;
+        size_t end = line.find(' ');
+        while (end != string::npos) {
+            vs.push_back(line.substr(start, end - start));
+            start = end + 1;
+            end = line.find(' ', start);
+        }
+        vs.push_back(line.substr(start, end - start));
+
+        if(vs[0] == "BUY" || vs[0] == "SELL"){
+            if(vs.size()==5) {
+                Order o(vs[0], vs[1], stoi(vs[2]), stoi(vs[3]), vs[4]);
+                mc.New(o);
+            }
+        }else if(vs[0] == "MODIFY"){
+            if(vs.size()==5) {
+                cout << vs.size() << endl;
+                Order o(vs[2], "GFD", stoi(vs[3]), stoi(vs[4]), vs[1]);
+                mc.Modify(o);
+            }
+        }else if(vs[0] == "CANCEL"){
+            if(vs.size()==2) {
+                cout << vs.size() << endl;
+                mc.Cancel(vs[1]);
+            }
+        }else if(vs[0] == "PRINT"){
+            mc.Print();
+        }
+        vs.clear();
+
+        //cout << line <<endl;
+    }
     cout << "end" << endl;
     return 0;
 }
