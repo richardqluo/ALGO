@@ -81,7 +81,7 @@ public:
 };
 
 //from a list of intervals (begin, end), find overlaps count at given time (uint_64 as millsec)
-//map<begin, pair<end,count>> or <pair<begin,end>,count> (2,5):1 (7,9):1 in map, 
+//map<begin, pair<end,count>, std::greater<int>> or <pair<begin,end>,count> (2,5):1 (7,9):1 in map, to return on vector<rt>
 //given (3,4)|(4,7) i(b,e); it = map.lower_bound(b); vector<pair<begin,end>>news; vector<pair<begin,end>>dups; vector<int>dupCounts;
 //while(b<=e) {
 //  if it.begin<b { it.end = b-1;  (2,2)|(2,3):1
@@ -89,6 +89,9 @@ public:
 //                  if it.end <=e (4,7) { dup=pair(b,it.end); dupCount=it.count+1; dup=(4,5):2
 //                  b=it.end+1; it++; it=(7,9) b=6 break|continue
 //                }
+//  if it.begin==b{if it.end > e { it.end = e; it.count++;
+//                 if it.end <=e { it.count++;
+//                 b=it.end+1; it++; 
 //  if it.begin>b {new=pair(b,it.begin-1); new(6,6):1
 //                 if it.end > e (6,7) {dup=pair(it.begin, e); dupCount=it.count+1; it.begin = e+1;
 //                 if it.end <=e {it.count++; 
@@ -96,3 +99,6 @@ public:
 //}
 //for(auto new : news){map.insert(make_pair(new.first, pair(new.second,1))) re|insert after iterate thru node in range
 //for(auto dup : dups){map.insert(make_pair(dup.first, pair(dup.second,dupCount))) 
+//...
+//it = map.lower_bound(rt); 4 > (3,4):2 | 6 > (6,6):1
+//rc = it->second.count;
