@@ -121,6 +121,7 @@ void stl(){
     }
     cout << endl;
     //for(auto it : map){ it.second
+    //map has rbegin rend to iterate backward but unordered_map has not because unsorted
     for(auto it = map.begin(); it != map.end(); ) {//not ++it here
         if (it->second < 100)
             it = map.erase(it);//return it pointing to the next
