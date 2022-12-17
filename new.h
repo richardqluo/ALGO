@@ -80,6 +80,55 @@ public:
     }
 };
 
+struct Job{
+    int id;
+    int time;
+    int subId;
+    Job(int i, int t, int s) : id(i),time(t),subId(s){ }
+};
+struct Init{
+    int fid;
+    int sum;
+    int count;
+    Init(int i, int s, int c) : fid(i),sum(s),count(c){ }
+};
+
+class JobChain {
+private:
+    unordered_map<int, Init> jobs;
+    map<int, int> seqs; //<fid,lid>
+    int tm = 0;
+public:
+    void Add(Job& j) {
+        auto io = jobs.find(j.id);
+        if(io != jobs.end()){
+            if(j.subId == 0){//last in chain
+                io->second.sum+=j.time;
+                io->second.count++;
+            }else{
+                Init i(io->second.id, io->second.sum+j.time, io->second.count++);
+                jobs.insert(make_pair(j.subId,i));
+                seqs[io->second.id] = j.subId;
+                jobs.erase(io);
+            }
+        }else{
+            Init i(j.id, j.time, 1);
+            jobs.insert(make_pair(j.subId,i));
+            seqs[j.id] = j.subId;
+        }
+    }
+    void Print() {
+        for(auto it = seqs.begin(); it != seqs.end(); ++it) {
+            int fid = it->first;
+            int lid = it->second;
+            auto io = jobs.find(lid);
+            int sm = io->second.sum;
+            int ct = io->second.count;
+        }
+    }
+
+};
+
 //from a list of intervals (begin, end), find overlaps count at given time (uint_64 as millsec)
 //map<begin, pair<end,count>, std::greater<int>> or <pair<begin,end>,count> (2,5):1 (7,9):1 in map, to return on vector<rt>
 //given (3,4)|(4,7) i(b,e); it = map.lower_bound(b); vector<pair<begin,end>>news; vector<pair<begin,end>>dups; vector<int>dupCounts;
