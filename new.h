@@ -37,7 +37,7 @@ public:
         ct++;
     };
     int peek(int i){
-        return vt.at(i); //check out_of_range exp before vt[i]
+        return vt.at(i); //check out_of_range exp before vt[i] to avoid undefined behavvior
     };
     int avg(){
         return sm/sz;
