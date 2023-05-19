@@ -1,39 +1,55 @@
-//vector (array with consecutive memory) to replace queue (linked list with scattered memory) given size
-class Vq{
-private:
-    vector<int> vt;
+//vector (sequence containers array with consecutive memory) to replace queue (container adaptor to underlying container linked list with scattered memory) given size
+class Pq{
+private: 
+    queue<int> ps;
+    vector<int> pv;
+    int sm = 0;
     int ct = 0;
-public:
-    Vq(int sz):size(sz){};
-    const int size;
-
-    void push(int p){
-      if (vt.size() == size){
-          if(ct > size){
-              ct = 0;
-          }
-          vt[ct] = p;
-      }else{
-          vt.push_back(p);
-          if (vt.size() == size){ //only once when it reach the given size
-              vt.resize(size);//add/remove item to fit the same size
-              //vt.reserve(size) //reallocate if size > orig capacity to make new capacity >= size to avoid multiple reallocations during grrowth 
-          }
-      }  
-      ct++;  
+public: 
+    Pq(int s):sz(s){
+        pv.reserve(sz);//reallocate if size > orig capacity to make new capacity >= size to avoid multiple reallocations during grrowth 
     };
+    const int sz;
     
+    void add(int p){
+        if(ps.size() >= sz){
+            sm-=ps.front();
+            ps.pop();
+        }
+        ps.push(p);
+        sm+=p;
+    };
+    void push(int p){
+        if(pv.size() == sz){
+            if(ct==sz){
+                ct=0;
+            }
+            sm-=pv[ct];
+            pv[ct]=p;
+            sm+=p;
+        }else{
+            pv.push_back(p);
+            sm+=p;
+            if(pv.size() == sz){
+                pv.resize(sz);//add/remove item to fit the same size
+            }
+        }
+        ct++;
+    };
     int peek(int i){
         return vt.at(i); //check out_of_range exp before vt[i]
+    };
+    int avg(){
+        return sm/sz;
     };
 };
 
 int main() {
-    Vq vq(2);
-    vq.push(0);
-    vq.push(1);
-    vq.push(2);
-    std::cout << vq.peek(0) << "\n";
+    Pq pq(2);
+    pq.push(2);
+    pq.push(2);
+    pq.push(4);
+    cout<< "avg = " << pq.avg() << "\n";
 }
 
 #include <map>
