@@ -148,22 +148,127 @@ public:
 //from a list of intervals (begin, end), find overlaps count at given time (uint_64 as millsec)
 //map<begin, pair<end,count>, std::greater<int>> or <pair<begin,end>,count> (2,5):1 (7,9):1 in map, to return on vector<rt>
 //given (3,4)|(4,7) i(b,e); it = map.lower_bound(b); vector<pair<begin,end>>news; vector<pair<begin,end>>dups; vector<int>dupCounts;
-//while(b<=e) {
-//  if it.begin<b { it.end = b-1;  (2,2)|(2,3):1
-//                  if it.end > e (3,4) { dup=pair(b,e); dupCount=it.count+1; new=pair(e+1,it.end);  dup(3,4):2 new(5,5):1
-//                  if it.end <=e (4,7) { dup=pair(b,it.end); dupCount=it.count+1; dup=(4,5):2
-//                  b=it.end+1; it++; it=(7,9) b=6 break|continue
-//                }
-//  if it.begin==b{if it.end > e { it.end = e; it.count++;
-//                 if it.end <=e { it.count++;
-//                 b=it.end+1; it++; 
-//  if it.begin>b {new=pair(b,it.begin-1); new(6,6):1
-//                 if it.end > e (6,7) {dup=pair(it.begin, e); dupCount=it.count+1; it.begin = e+1;
-//                 if it.end <=e {it.count++; 
-//                 b=it.end+1; it++; 
-//}
-//for(auto new : news){map.insert(make_pair(new.first, pair(new.second,1))) re|insert after iterate thru node in range
-//for(auto dup : dups){map.insert(make_pair(dup.first, pair(dup.second,dupCount))) 
-//...
 //it = map.lower_bound(rt); 4 > (3,4):2 | 6 > (6,6):1
 //rc = it->second.count;
+#include <iostream>
+#include <vector>
+#include <tuple>
+#include <map>
+
+using namespace std;
+class Counter{
+private:
+    map<long, pair<long,int>, greater<long>> mp;
+    vector<tuple<long,long,int>> adds;
+
+public:
+    void save(vector<pair<long,long>>& I){
+        for (auto i : I) {
+            long b = i.first;
+            long e = i.second;
+            auto it = mp.lower_bound(b);
+            while(b <= e){
+                if(it->first < b){//it->first is const key ordered by map
+                    if(it->second.first < b){
+                        adds.emplace_back(make_tuple(b, e, 1));
+                        break;
+                    }
+                    if(it->second.first == b){
+                        it->second.first = b-1;
+                        adds.emplace_back(make_tuple(b, b, it->second.second++));
+                        adds.emplace_back(make_tuple(b+1, e, 1));
+                        break;
+                    }
+                    if(it->second.first > e){
+                        it->second.first = b-1;
+                        adds.emplace_back(make_tuple(b, e, it->second.second++));
+                        adds.emplace_back(make_tuple(e+1, it->second.first, 1));
+                        break;
+                    }
+                    if(it->second.first == e){
+                        it->second.first = b-1;
+                        adds.emplace_back(make_tuple(b, e, it->second.second++));
+                        break;
+                    }
+                    if(it->second.first < e){
+                        adds.emplace_back(make_tuple(b, it->second.first, it->second.second++));
+                        long oe = it->second.first;
+                        it->second.first = b-1;
+                        b = oe+1;
+                        it++;
+                        continue;
+                    }
+                }
+                if(it->first == b){
+                    it->second.second += 1;
+                    if(it->second.first > e){
+                        it->second.first = e;
+                        adds.emplace_back(make_tuple(e+1, it->second.first, 1));
+                        break;
+                    }
+                    if(it->second.first == e){
+                        break;
+                    }
+                    if(it->second.first < e){
+                        b = it->second.first+1;
+                        it++;
+                        continue;
+                    }
+                }
+                if(it->first > b){
+                    adds.emplace_back(make_tuple(b, it->first-1, 1));
+                    it->second.second += 1;
+                    if(it->second.first > e){
+                        adds.emplace_back(make_tuple(e+1, it->second.first, 1));
+                        it->second.first = e;
+                        break;
+                    }
+                    if(it->second.first == e){
+                        break;
+                    }
+                    if(it->second.first < e){
+                        b = it->second.first+1;
+                        it++;
+                        continue;
+                    }
+                }
+            }
+
+            for (tuple<long,long,int> add : adds) {
+                long b = get<0>(add);
+                long e = get<1>(add);
+                int  c = get<2>(add);
+
+                mp.insert(make_pair(b, make_pair(e, c)));
+            }
+            adds.clear();
+        }
+    };
+
+    int query(long T){
+        auto it = mp.lower_bound(T);
+        if(it->first != 0){//exceed existing key
+            if (it->first <= T & it->second.first >= T){
+                return it->second.second;
+            }
+        }
+        return 0;
+    }
+};
+
+int main() {
+    cout << "begin" << endl;
+
+    Counter ct;
+    vector<pair<long,long>> i;
+    i.emplace_back(make_pair(2,5));
+    i.emplace_back(make_pair(7,9));
+
+    i.emplace_back(make_pair(3,4));
+    ct.save(i);
+    int r = ct.query(3);
+    cout << r << endl;
+    cout << "end" << endl;
+    return 0;
+}
+
