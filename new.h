@@ -1,3 +1,64 @@
+struct custCmp{
+    bool operator()(const pair<int,string>& l,const pair<int,string>& r){
+        return l.first > r.first;//smallest on top, default largest on top for priority_queue
+    }
+};
+
+class Vp{
+private:
+    unordered_map<string,pair<int,int>> mp;
+    priority_queue<pair<int,string>,vector<pair<int,string>>,custCmp> pq;//vector needed with custom comparer
+    priority_queue<pair<long,int>> tq;//add a similar custCmp
+    const int k;
+    const long n;
+    int sm=0;
+public:
+    Vp(int sz, long tm):k(sz),n(tm){};
+    //top k violatile priced stock
+    void add(string sym, int prc){
+        int vol=0;
+        auto im=mp.find(sym);
+        if(im!=mp.end()){
+            int pre=im->second.second;
+            vol=abs(prc-pre)/pre;
+            im->second.first=vol;
+            im->second.second=prc;
+        }else{
+            mp.insert(make_pair(sym,make_pair(vol,prc)));
+        }
+        if(pq.size()==k){
+            if(vol>pq.top().first){
+                pq.pop();
+                pq.push(make_pair(vol,sym));//may has duplicate sym item
+            }
+        }else{
+            pq.push(make_pair(vol,sym));
+        }
+    };
+    void peek(){
+        while(!pq.empty()){
+            cout<<pq.top().second<<":"<<pq.top().first<<'\n';
+            pq.pop();
+        }
+    };
+    //avg price during given time window
+    void push(long tm,int prc){
+        if(tm-tq.top().first>n){
+            int pre=tq.top().second;
+            sm-=pre;
+            tq.pop();
+            tq.push(make_pair(tm,prc));
+            sm+=prc;
+        }else{
+            tq.push(make_pair(tm,prc));
+            sm+=prc;
+        }
+    };
+    int avg(){
+        return sm/tq.size();
+    };
+};
+
 //vector (sequence containers array with consecutive memory) to replace queue (container adaptor to underlying container linked list with scattered memory) given size
 class Pq{
 private: 
