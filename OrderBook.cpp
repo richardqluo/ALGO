@@ -23,14 +23,14 @@ struct Order{
     Order(unsigned long long i, unsigned long tm, string sb, char tp, char sd, double p, unsigned long long sh) : id(i),time(tm),symbol(sb),type(tp),side(sd),price(p),shares(sh){}
 };
 
-struct lessComp {
+struct moreComp {
     bool operator() (const shared_ptr<Order>& lhs, const shared_ptr<Order>& rhs) const
-    {return lhs->time > rhs->time;}
+    {return lhs->time > rhs->time;} //smallest on top, default < std:less largest on top for priority_queue 
 };
 
 class Matcher{
 private:
-    unordered_map<string,map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>>> asks;
+    unordered_map<string,map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>>> asks;//vector required for custom comparer
     unordered_map<string,map<double,priority_queue<shared_ptr<Order>,vector<shared_ptr<Order>>,lessComp>,greater<double>>> bids;
     unordered_map<unsigned long long,vector<shared_ptr<Order>>> orders;
 
