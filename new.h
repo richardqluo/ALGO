@@ -1,6 +1,6 @@
 struct custCmp{
     bool operator()(const pair<int,string>& l,const pair<int,string>& r){
-        return l.first > r.first;//smallest on top, default < largest on top for priority_queue
+        return l.first > r.first;//smallest on top, default < std::less largest on top for priority_queue
     }
 };
 
@@ -117,7 +117,7 @@ int main() {
 #include <functional>
 struct moreComp {
   bool operator() (const int& lhs, const int& rhs) const
-  {return lhs>rhs;} //default < std::less<int>
+  {return lhs>rhs;} //default < std::less<int> .begin() is smallest
 };
 class StkEx{
 private:
