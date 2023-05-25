@@ -1,6 +1,6 @@
 struct custCmp{
     bool operator()(const pair<int,string>& l,const pair<int,string>& r){
-        return l.first > r.first;//smallest on top, default largest on top for priority_queue
+        return l.first > r.first;//smallest on top, default < largest on top for priority_queue
     }
 };
 
