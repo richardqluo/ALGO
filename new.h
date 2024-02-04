@@ -26,6 +26,7 @@ public:
         }else{
             mp.insert(make_pair(sym,make_pair(vol,prc)));
         }
+        /*
         if(pq.size()==k){
             if(vol>pq.top().first){
                 pq.pop();
@@ -34,9 +35,22 @@ public:
         }else{
             pq.push(make_pair(vol,sym));
         }
+        */
     };
     void peek(){
-        while(!pq.empty()){
+        for(auto im : mp){
+            string sym = itm->first;
+            int vol = itm->second->first;
+            if(pq.size()==k){
+                if(vol>pq.top().first){
+                    pq.pop();
+                    pq.push(make_pair(vol,sym));//no duplicate sym item
+                }
+            }else{
+                pq.push(make_pair(vol,sym));
+            }
+        }
+        while(!pq.empty()){//go thru and empty the pq
             cout<<pq.top().second<<":"<<pq.top().first<<'\n';
             pq.pop();
         }
@@ -59,10 +73,11 @@ public:
     };
 };
 
+//average of last n prices
 //vector (sequence containers array with consecutive memory) to replace queue (container adaptor to underlying container linked list with scattered memory) given size
 class Pq{
 private: 
-    queue<int> ps;
+    queue<int> ps; 
     vector<int> pv;
     int sm = 0;
     int ct = 0;
