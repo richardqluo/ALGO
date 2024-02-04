@@ -1568,14 +1568,10 @@ public:
 };
 
 struct ListNode {
-    int key;//LRUCache
     int value;
     ListNode *next;
-    ListNode *prev;//LRUCache
     ListNode *random;//copyRandomList
     ListNode(int x) : value(x), next(nullptr) { }
-    ListNode(int k, int x) : key(k),value(x), next(nullptr),prev(nullptr) { }//LRUCache
-
 };
 struct TreeNode{
     int value;
@@ -1610,13 +1606,22 @@ struct customLess{
 
 class LRUCache{
 private:
+
+struct ListNode{
+  string key;
+  int value;
+  ListNode* prev;
+  ListNode* next;
+  ListNode(string k, int v):key(k),value(v),prev(nullptr),next(nullptr){}
+};
+
     int capacity;
     unordered_map<int, ListNode*> mp;
     ListNode* head= nullptr;
     ListNode* tail= nullptr;
 public:
     LRUCache(int cap):capacity(cap){};
-    int get(int key)
+    int get(string key)
     {
         if(mp.find(key)!=mp.end())
         {
@@ -1628,7 +1633,7 @@ public:
         return -1;
     }
 
-    void set(int key, int value)
+    void set(string key, int value)
     {
         if(mp.find(key)!=mp.end())
         {
@@ -1639,12 +1644,14 @@ public:
         }
         else
         {
-            //auto cp=unique_ptr<ListNode>(new ListNode(key,value));
+            //auto cp=unique_ptr<ListNode>(new ListNode(key,value)); //auto delete 
             ListNode* cp=new ListNode(key,value);
             if(mp.size()>=capacity)
             {
                 mp.erase(tail->key);
+                ListNode* td=tail;
                 remove(tail);
+                delete td; //manual delete node that tail used to point before move
                 setHead(cp);
             }
             else
@@ -1655,31 +1662,31 @@ public:
         }
     }
 
-    void remove(ListNode* np)
+      void remove(ListNode* np)
     {
         if(np->prev!= nullptr)
             np->prev->next=np->next;
-        else
-            head=np->next;
+        else //np is tail
+            tail=np->next;
 
         if(np->next!= nullptr)
             np->next->prev=np->prev;
-        else
-            tail=np->prev;
+        else //np is head
+            head=np->prev;
+        //dont delet np maybe setHead to it later
     }
-
     void setHead(ListNode* np)
     {
-        np->next=head;
-        np->prev= nullptr;
+        np->prev=head;
+        np->next=nullptr;
         if(head!=nullptr)
-            head->prev=np;
+            head->next=np;
         head=np;
-        if(tail== nullptr)
+        if(tail==nullptr) //1st node
             tail=head;
     }
-
 };
+
 struct HashEntry{
     int value;
     int key;
