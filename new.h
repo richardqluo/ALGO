@@ -38,9 +38,9 @@ public:
         */
     };
     void peek(){
-        for(auto im : mp){
-            string sym = itm->first;
-            int vol = itm->second->first;
+        for(const auto& im : mp){
+            string sym = itm.first;
+            int vol = itm.second.first;
             if(pq.size()==k){
                 if(vol>pq.top().first){
                     pq.pop();
