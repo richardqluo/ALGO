@@ -1776,11 +1776,12 @@ public:
         if(row<m-1)
             return minPathSumDFS(++row,col)+matrix[row][col];
         //return uniqPathSumDFS(++row,col);
-        if(col<n-1)
+        if(col<n-1) //else if > only 1 path
             return minPathSumDFS(row,++col)+matrix[row][col];
         //return uniqPathSumDFS(row,++col);
         return 0;//out of boundary
     }
+//mini initial value to pass each cell +/- value to reach the end before down to 0  
     int calculateMinimumHP(int** matrix){
         int hp[m][n];
         hp[m-1][n-1]=max(1-matrix[m-1][n-1],1);
