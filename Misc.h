@@ -1768,17 +1768,18 @@ public:
             return matrix[row][col];
         //return 1;
         if(row<m-1&&col<n-1){
-            int d=minPathSumDFS(++row,col)+matrix[row][col];//(++row,col,k-1)
-            int r=minPathSumDFS(row,++col)+matrix[row][col];
+            //not row++ col++ affect following lines 
+            int d=minPathSumDFS(row+1,col)+matrix[row][col];//(row+1,col,k-1)
+            int r=minPathSumDFS(row,col+1)+matrix[row][col];
             return min(d,r);
-            //return uniqPathSumDFS(++row,col)+uniqPathSumDFS(row,++col);
+            //return uniqPathSumDFS(row+1,col)+uniqPathSumDFS(row,col+1);
         }
         if(row<m-1)
-            return minPathSumDFS(++row,col)+matrix[row][col];
-        //return uniqPathSumDFS(++row,col);
+            return minPathSumDFS(row+1,col)+matrix[row][col];
+        //return uniqPathSumDFS(row+1,col);
         if(col<n-1) //else if > only 1 path
-            return minPathSumDFS(row,++col)+matrix[row][col];
-        //return uniqPathSumDFS(row,++col);
+            return minPathSumDFS(row,col+1)+matrix[row][col];
+        //return uniqPathSumDFS(row,col+1);
         return 0;//out of boundary
     }
 //mini initial value to pass each cell +/- value to reach the end before down to 0  
