@@ -1762,8 +1762,8 @@ public:
         return count[n];
     }
     int minPathSumDFS(int row,int col){
-    //int uniqPathSumDFS(int row,int col){
-    //int minPathSumDFS(int row,int col, step k){ similar after k steps
+    //int uniqPathSumDFS(int row,int col){ //unique path
+    //int min|maxPathSumDFS(int row,int col, step k){ similar after k steps
         if(row==m-1&&col==n-1)// || k=0
             return matrix[row][col];
         //return 1;
@@ -1771,7 +1771,7 @@ public:
             int d=minPathSumDFS(++row,col)+matrix[row][col];//(++row,col,k-1)
             int r=minPathSumDFS(row,++col)+matrix[row][col];
             return min(d,r);
-            //return uniqPathSumDFS(++row,col)+uniqPathSumDFS(++row,col);
+            //return uniqPathSumDFS(++row,col)+uniqPathSumDFS(row,++col);
         }
         if(row<m-1)
             return minPathSumDFS(++row,col)+matrix[row][col];
