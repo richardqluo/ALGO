@@ -132,11 +132,11 @@ int main() {
 #include <functional>
 struct moreComp {
   bool operator() (const int& lhs, const int& rhs) const
-  {return lhs>rhs;} //default < std::less<int> .begin() is smallest
+  {return lhs>rhs;} //default < std::less<int> .end() is largest
 };
 class StkEx{
 private:
-    std::multimap<int,int,std::greater<int>> asks; //.begin() is largest
+    std::multimap<int,int,std::greater<int>> asks; //.end() is smallest
     //multimap<int,int,moreComp> //multi key
     
 public:
