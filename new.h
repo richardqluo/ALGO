@@ -4,16 +4,17 @@ struct custCmp{
     }
 };
 
-class Vp{
+class Wp{
 private:
-    unordered_map<string,pair<int,int>> mp;
-    priority_queue<pair<int,string>,vector<pair<int,string>>,custCmp> pq;//vector needed with custom comparer
-    priority_queue<pair<uint64_t,int>> tq;//add a similar custCmp
+    unordered_map<string,pair<int,int>> mp; //<symbol, violatility, last price>
+    priority_queue<pair<int,string>,vector<pair<int,string>>,custCmp> pq;//<violatility,symbol> vector needed with custom comparer
     const int k;
+
+    priority_queue<pair<uint64_t,int>, vector<pair<uint64_t,int>>,cmt> tq; //<timestamp,price> add a similar cust cmt
     const uint64_t n;
     int sm=0;
 public:
-    Vp(int sz, uint64_t tm):k(sz),n(tm){};
+    Wp(int sz, uint64_t tm):k(sz),n(tm){};
     //top k violatile priced stock
     void add(string sym, int prc){
         int vol=0;
@@ -68,6 +69,32 @@ public:
         return sm/tq.size();
     };
 };
+//for avg price only
+unordered_map<string,shared_ptr<Wp>> tm; //<symbol,Wp>
+void setPrc(uint64_t ts,string sym,int pr){
+    shared_ptr<Wp> wptr;
+    auto im=tm.find(sym);
+    if(im!=tm.end()){
+        wptr=im->second;
+    }else{
+        wptr=make_shared<Wp>(10,1000);
+        tm[sym]=wptr;
+    }
+    wptr->push(ts,pr);
+}
+int getAvg(string sym){
+    auto im=tm.find(sym);
+    if(im!=tm.end()){
+        return im->second->avg();
+    }
+    return 0;
+}
+
+int main() {
+    setPrc(100001,"C",999);
+    setPrc(100010,"C",888);
+    setPrc(100100,"C",777);
+    cout<<getAvg("C")<<endl;}
 
 //average of last n prices
 //vector (sequence containers array with consecutive memory) to replace queue (container adaptor to underlying container linked list with scattered memory) given size
