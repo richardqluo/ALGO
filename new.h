@@ -57,16 +57,12 @@ public:
     };
     //avg price during given time window
     void push(long tm,int prc){
-        if(tm-tq.top().first>n){
-            int pre=tq.top().second;
-            sm-=pre;
-            tq.pop();
-            tq.push(make_pair(tm,prc));
-            sm+=prc;
-        }else{
-            tq.push(make_pair(tm,prc));
-            sm+=prc;
+        while(!tq.empty() && tm-tq.top().first>n){
+            sm-=tq.top().second;
+            tq.pop();  
         }
+        sm+=pr;
+        tq.push(make_pair(tm,pr));
     };
     int avg(){
         return sm/tq.size();
