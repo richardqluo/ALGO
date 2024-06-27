@@ -8,12 +8,12 @@ class Vp{
 private:
     unordered_map<string,pair<int,int>> mp;
     priority_queue<pair<int,string>,vector<pair<int,string>>,custCmp> pq;//vector needed with custom comparer
-    priority_queue<pair<long,int>> tq;//add a similar custCmp
+    priority_queue<pair<uint64_t,int>> tq;//add a similar custCmp
     const int k;
-    const long n;
+    const uint64_t n;
     int sm=0;
 public:
-    Vp(int sz, long tm):k(sz),n(tm){};
+    Vp(int sz, uint64_t tm):k(sz),n(tm){};
     //top k violatile priced stock
     void add(string sym, int prc){
         int vol=0;
@@ -56,7 +56,7 @@ public:
         }
     };
     //avg price during given time window
-    void push(long tm,int prc){
+    void push(uint64_t tm,int prc){
         while(!tq.empty() && tm-tq.top().first>n){
             sm-=tq.top().second;
             tq.pop();  
