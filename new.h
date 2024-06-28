@@ -151,6 +151,7 @@ int main() {
     cout<< "avg = " << pq.avg() << "\n";
 }
 
+
 struct order {
   string symbol;
   char type;
@@ -164,12 +165,13 @@ struct quote {
   string symbol;
   int ask;
   int bid;
+  quote() = default; //or ={} required by mq[] to init without arg
   quote(string sym, int a, int b) : symbol(sym), ask(a), bid(b) {}
 };
 class ox {
 private:
   unordered_map<string, list<order>> mo;
-  unordered_map<string, quote> mp; //last price
+  unordered_map<string, quote> mq; //last price
   int exeQty = 0;
   int avgPrc = 0;
 
@@ -186,25 +188,29 @@ public:
       }
     } else {//Market order exe at last price
       exeQty+=od.quantity;
-      auto im = mp.find(od.symbol);
-      //avgPrc = (avgPrc + (od.side=='B' ? mp[od.symbol].ask : mp[od.symbol].bid)) / 2;
+      auto im = mq.find(od.symbol);
+      int pr = od.side=='B' ? mq[od.symbol].ask : mq[od.symbol].bid;
+      avgPrc = avgPrc==0 ? pr : (avgPrc + pr) / 2;
     }
   }
   void fill(quote qt) {
-    mp[qt.symbol]=qt;  
+    mq[qt.symbol]=qt;  
     auto im = mo.find(qt.symbol);
     if (im != mo.end()) {
       list<order>& lo = im->second;
-      for(auto it=lo.begin();it!=lo.end();++it){
+      for(auto it=lo.begin();it!=lo.end();){
           cout<<it->price<<endl;
         if (it->side == 'B' && it->price >= qt.ask) {
             exeQty+=it->quantity;
-            avgPrc = (avgPrc + qt.ask) / 2; //if od.price > qt.ask, exe at qt.ask
-            lo.erase(it);
-        } else if (it->price <= qt.bid) {
+            avgPrc = avgPrc==0 ? qt.ask : (avgPrc + qt.ask) / 2; //if od.price > qt.ask, exe at qt.ask
+            it=lo.erase(it);
+        } else if (it->side == 'S' && it->price <= qt.bid) {
             exeQty+=it->quantity;
-            avgPrc = (avgPrc + qt.bid) / 2;
-            lo.erase(it);
+            cout<<qt.bid<<endl;
+            avgPrc = avgPrc==0 ? qt.bid : (avgPrc + qt.bid) / 2; 
+            it=lo.erase(it); //erase return the next
+        } else{
+            ++it; //without erase
         }
       }
     }
@@ -212,9 +218,7 @@ public:
   }
 };
 
-
 int main() {
-
   order o1("AAPL", 'L', 'S', 195, 100);
   order o2("AAPL", 'L', 'B', 190, 200);
   quote q1("AAPL", 195, 194);
@@ -228,6 +232,7 @@ int main() {
 
   return 0;
 }
+
 
 #include <map>
 #include <functional>
