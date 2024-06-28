@@ -151,6 +151,84 @@ int main() {
     cout<< "avg = " << pq.avg() << "\n";
 }
 
+struct order {
+  string symbol;
+  char type;
+  char side;
+  int price;
+  int quantity;  
+  order(string sym, char typ, char sde, int prc, int qty)
+      : symbol(sym), type(typ), side(sde), price(prc), quantity(qty) {}
+};
+struct quote {
+  string symbol;
+  int ask;
+  int bid;
+  quote(string sym, int a, int b) : symbol(sym), ask(a), bid(b) {}
+};
+class ox {
+private:
+  unordered_map<string, list<order>> mo;
+  unordered_map<string, quote> mp; //last price
+  int exeQty = 0;
+  int avgPrc = 0;
+
+public:
+  void load(order od) {
+    if (od.type == 'L') {//Limit
+      auto im = mo.find(od.symbol);
+      if (im != mo.end()) {
+        im->second.push_back(od);
+      } else {
+        list<order> lo;
+        lo.push_back(od);
+        mo[od.symbol] = lo;
+      }
+    } else {//Market order exe at last price
+      exeQty+=od.quantity;
+      auto im = mp.find(od.symbol);
+      //avgPrc = (avgPrc + (od.side=='B' ? mp[od.symbol].ask : mp[od.symbol].bid)) / 2;
+    }
+  }
+  void fill(quote qt) {
+    mp[qt.symbol]=qt;  
+    auto im = mo.find(qt.symbol);
+    if (im != mo.end()) {
+      list<order>& lo = im->second;
+      for(auto it=lo.begin();it!=lo.end();++it){
+          cout<<it->price<<endl;
+        if (it->side == 'B' && it->price >= qt.ask) {
+            exeQty+=it->quantity;
+            avgPrc = (avgPrc + qt.ask) / 2; //if od.price > qt.ask, exe at qt.ask
+            lo.erase(it);
+        } else if (it->price <= qt.bid) {
+            exeQty+=it->quantity;
+            avgPrc = (avgPrc + qt.bid) / 2;
+            lo.erase(it);
+        }
+      }
+    }
+    cout <<  exeQty << " @ " << avgPrc << "\n";
+  }
+};
+
+
+int main() {
+
+  order o1("AAPL", 'L', 'S', 195, 100);
+  order o2("AAPL", 'L', 'B', 190, 200);
+  quote q1("AAPL", 195, 194);
+  quote q2("AAPL", 190, 189);
+
+  ox oxt;
+  oxt.load(o1);
+  oxt.load(o2);
+  oxt.fill(q1);
+  oxt.fill(q2);
+
+  return 0;
+}
+
 #include <map>
 #include <functional>
 struct moreComp {
@@ -1001,90 +1079,5 @@ public:
 };
 
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
-using namespace std;
-struct ord {
-  string sym;
-  char type;
-  char side;
-  int prc;
-  ord(string sb, char tp, char sd, int pc)
-      : sym(sb), type(tp), side(sd), prc(pc) {}
-};
-struct qt {
-  string sym;
-  int ask;
-  int bid;
-  qt(string sb, int a, int b) : sym(sb), ask(a), bid(b) {}
-};
-class oe {
-private:
-  unordered_map<string, vector<ord>> mo;
-  int executed = 0;
-  int avg = 0;
 
-public:
-  void add(string sb, char tp, char sd, int pc) {
-
-    if (tp == 'L') {
-      ord od(sb, tp, sd, pc);
-      auto im = mo.find(sb);
-      if (im != mo.end()) {
-        im->second.push_back(od);
-      } else {
-        vector<ord> vo;
-        vo.push_back(od);
-        mo[sb] = vo;
-      }
-    } else {
-      executed++;
-      avg = (avg + pc) / 2;
-    }
-  }
-  void match(string sb, int a, int b) {
-    auto im = mo.find(sb);
-    if (im != mo.end()) {
-      vector<ord> &v = im->second;
-      ord o = v.front(); // use list instead
-      if (o.side == 'B' && o.prc >= a) {
-        executed++;
-        avg = (avg + o.prc) / 2;
-      } else if (o.prc <= b) {
-        executed++;
-        avg = (avg + o.prc) / 2;
-      }
-    }
-    cout << "executed=" << executed << " avg=" << avg << "\n";
-  }
-};
-
-/*
-
-Order (AAPL 100 Buy, MKT)
-Order (AAPL 100 Buy Limit 190)
-Quote (AAPL 194/195)
-Order (AAPL 100 Buy MKT) executed
-Quote (AAPL 185/190)
-Order (AAPL 100 Buy Limit 190) executed
-
-*/
-
-// To execute C++, please define "int main()"
-int main() {
-
-  ord o1("AAPL", 'L', 'S', 195);
-  ord o2("AAPL", 'L', 'B', 190);
-  qt q1("AAPL", 195, 194);
-  qt q2("AAPL", 190, 189);
-  // expect o2 to execute
-  oe oet;
-  oet.add(o2.sym, o2.type, o2.side, o2.prc);
-  oet.match(q1.sym, q1.ask, q1.bid);
-  oet.match(q2.sym, q2.ask, q2.bid);
-
-  return 0;
-}
 
