@@ -1000,3 +1000,91 @@ public:
     }
 };
 
+
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+using namespace std;
+struct ord {
+  string sym;
+  char type;
+  char side;
+  int prc;
+  ord(string sb, char tp, char sd, int pc)
+      : sym(sb), type(tp), side(sd), prc(pc) {}
+};
+struct qt {
+  string sym;
+  int ask;
+  int bid;
+  qt(string sb, int a, int b) : sym(sb), ask(a), bid(b) {}
+};
+class oe {
+private:
+  unordered_map<string, vector<ord>> mo;
+  int executed = 0;
+  int avg = 0;
+
+public:
+  void add(string sb, char tp, char sd, int pc) {
+
+    if (tp == 'L') {
+      ord od(sb, tp, sd, pc);
+      auto im = mo.find(sb);
+      if (im != mo.end()) {
+        im->second.push_back(od);
+      } else {
+        vector<ord> vo;
+        vo.push_back(od);
+        mo[sb] = vo;
+      }
+    } else {
+      executed++;
+      avg = (avg + pc) / 2;
+    }
+  }
+  void match(string sb, int a, int b) {
+    auto im = mo.find(sb);
+    if (im != mo.end()) {
+      vector<ord> &v = im->second;
+      ord o = v.front(); // use list instead
+      if (o.side == 'B' && o.prc >= a) {
+        executed++;
+        avg = (avg + o.prc) / 2;
+      } else if (o.prc <= b) {
+        executed++;
+        avg = (avg + o.prc) / 2;
+      }
+    }
+    cout << "executed=" << executed << " avg=" << avg << "\n";
+  }
+};
+
+/*
+
+Order (AAPL 100 Buy, MKT)
+Order (AAPL 100 Buy Limit 190)
+Quote (AAPL 194/195)
+Order (AAPL 100 Buy MKT) executed
+Quote (AAPL 185/190)
+Order (AAPL 100 Buy Limit 190) executed
+
+*/
+
+// To execute C++, please define "int main()"
+int main() {
+
+  ord o1("AAPL", 'L', 'S', 195);
+  ord o2("AAPL", 'L', 'B', 190);
+  qt q1("AAPL", 195, 194);
+  qt q2("AAPL", 190, 189);
+  // expect o2 to execute
+  oe oet;
+  oet.add(o2.sym, o2.type, o2.side, o2.prc);
+  oet.match(q1.sym, q1.ask, q1.bid);
+  oet.match(q2.sym, q2.ask, q2.bid);
+
+  return 0;
+}
+
