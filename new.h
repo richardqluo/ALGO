@@ -56,7 +56,7 @@ public:
             pq.pop();
         }
     };
-    //avg price during given time window
+    //avg price during given time window, use queue instead of priority_queue if tm in sequence
     void push(uint64_t tm,int prc){
         while(!tq.empty() && tm-tq.top().first>n){
             sm-=tq.top().second;
