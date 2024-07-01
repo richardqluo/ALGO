@@ -194,7 +194,10 @@ public:
     }
   }
   void fill(quote qt) {
-    mq[qt.symbol]=qt;  
+    auto pm = mq.insert(make_pair(qt.symbol,qt));
+    if(!pm.second)
+        pm.first->second=qt;
+    //mq[qt.symbol]=qt;  //use above to avoid extra quote by default constructor
     auto im = mo.find(qt.symbol);
     if (im != mo.end()) {
       list<order>& lo = im->second;
